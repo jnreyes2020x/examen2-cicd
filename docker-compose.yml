@@ -1,0 +1,51 @@
+version: '3.9'
+
+services:
+  # ── Servicio 1: Aplicación web (To-Do API con Node.js) ──
+  app:
+    build: .                          # Construye desde el Dockerfile en este directorio
+    container_name: todo_app
+    ports:
+      - "3000:3000"                   # Host:Contenedor
+    environment:
+      - DB_HOST=db                    # Nombre del servicio PostgreSQL (resuelve por DNS interno)
+      - DB_PORT=5432
+      - DB_NAME=tododb
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - PORT=3000
+    depends_on:
+      db:
+        condition: service_healthy    # Espera a que Postgres esté listo antes de arrancar
+    networks:
+      - app_network                   # Red personalizada
+    restart: unless-stopped
+
+  # ── Servicio 2: Base de datos PostgreSQL ──
+  db:
+    image: postgres:15-alpine
+    container_name: todo_db
+    environment:
+      - POSTGRES_DB=tododb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - db_data:/var/lib/postgresql/data   # Volumen persistente
+    networks:
+      - app_network                        # Misma red personalizada
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+# ── Volumen persistente para la base de datos ──
+volumes:
+  db_data:
+    driver: local
+
+# ── Red personalizada para comunicación entre servicios ──
+networks:
+  app_network:
+    driver: bridge

@@ -1,0 +1,53 @@
+name: CD Pipeline
+
+# ── Trigger: SOLO push a main (sin pull_request) ──
+on:
+  push:
+    branches: [main]
+
+jobs:
+  # ── Job: Build y Deploy a Docker Hub ──
+  deploy:
+    name: Build & Deploy to Docker Hub
+    runs-on: ubuntu-latest
+    environment: production           # GitHub Environment llamado 'production'
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+
+      - name: Instalar dependencias y correr tests antes de deploy
+        run: |
+          npm ci
+          npm test
+
+      # ── Login a Docker Hub usando secrets ──
+      - name: Login a Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}    # Secret 1
+          password: ${{ secrets.DOCKER_TOKEN }}       # Secret 2
+
+      # ── Build y push de la imagen Docker ──
+      - name: Build y push imagen Docker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/todo-api:latest
+            ${{ secrets.DOCKER_USERNAME }}/todo-api:${{ github.sha }}
+
+      # ── Notificación del deploy exitoso ──
+      - name: Notificar deploy exitoso
+        run: |
+          echo "✅ Deploy exitoso!"
+          echo "Imagen: ${{ secrets.DOCKER_USERNAME }}/todo-api:${{ github.sha }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Branch: ${{ github.ref_name }}"
