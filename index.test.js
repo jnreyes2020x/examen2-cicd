@@ -1,24 +1,33 @@
 const request = require('supertest');
-const app = require('./index');
 
-// Mock de la conexión a PostgreSQL para tests unitarios
+// Mock ANTES de importar app
 jest.mock('pg', () => {
-  const mockPool = {
-    query: jest.fn(),
-  };
-  return { Pool: jest.fn(() => mockPool) };
+  const mQuery = jest.fn();
+  const mPool = { query: mQuery };
+  return { Pool: jest.fn(() => mPool) };
 });
 
 const { Pool } = require('pg');
 const mockPool = new Pool();
 
-describe('To-Do API', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    // Simula la creación de tabla en initDB
-    mockPool.query.mockResolvedValueOnce({});
-  });
+// Silenciar console.log durante los tests
+beforeAll(() => {
+  jest.spyOn(console, 'log').mockImplementation(() => {});
+});
 
+afterAll(() => {
+  console.log.mockRestore();
+});
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  // Primera llamada siempre es initDB (CREATE TABLE IF NOT EXISTS)
+  mockPool.query.mockResolvedValueOnce({ rows: [] });
+});
+
+const app = require('./index');
+
+describe('To-Do API', () => {
   test('GET /health responde 200', async () => {
     const res = await request(app).get('/health');
     expect(res.statusCode).toBe(200);
