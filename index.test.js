@@ -8,9 +8,12 @@ jest.mock('pg', () => {
 
 const { Pool } = require('pg');
 const mockPool = new Pool();
+const { app, initDB } = require('./index');
 
-beforeAll(() => {
+beforeAll(async () => {
   jest.spyOn(console, 'log').mockImplementation(() => {});
+  mockPool.query.mockResolvedValueOnce({ rows: [] });
+  await initDB();
 });
 
 afterAll(() => {
@@ -19,10 +22,7 @@ afterAll(() => {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockPool.query.mockResolvedValueOnce({ rows: [] });
 });
-
-const app = require('./index');
 
 describe('To-Do API', () => {
   test('GET /health responde 200', async () => {

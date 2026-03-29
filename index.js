@@ -81,9 +81,13 @@ app.delete('/tasks/:id', async (req, res) => {
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, async () => {
-  await initDB();
-  console.log(`🚀 To-Do API corriendo en puerto ${PORT}`);
-});
 
-module.exports = app;
+// Solo arranca el servidor si se ejecuta directamente (no en tests)
+if (require.main === module) {
+  app.listen(PORT, async () => {
+    await initDB();
+    console.log(`🚀 To-Do API corriendo en puerto ${PORT}`);
+  });
+}
+
+module.exports = { app, initDB };
