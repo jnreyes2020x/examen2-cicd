@@ -1,6 +1,5 @@
 const request = require('supertest');
 
-// Mock ANTES de importar app
 jest.mock('pg', () => {
   const mQuery = jest.fn();
   const mPool = { query: mQuery };
@@ -10,7 +9,6 @@ jest.mock('pg', () => {
 const { Pool } = require('pg');
 const mockPool = new Pool();
 
-// Silenciar console.log durante los tests
 beforeAll(() => {
   jest.spyOn(console, 'log').mockImplementation(() => {});
 });
@@ -21,7 +19,6 @@ afterAll(() => {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  // Primera llamada siempre es initDB (CREATE TABLE IF NOT EXISTS)
   mockPool.query.mockResolvedValueOnce({ rows: [] });
 });
 
